@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"sqldb"
-	"sqldb/config"
+	"github.com/binwen/sqldb"
+	"github.com/binwen/sqldb/config"
 )
 
 func TestNewDBEngine(t *testing.T) {

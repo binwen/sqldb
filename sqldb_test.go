@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"sqldb"
-	"sqldb/config"
-	"sqldb/tests"
+	"github.com/binwen/sqldb"
+	"github.com/binwen/sqldb/config"
+	"github.com/binwen/sqldb/tests"
 )
 
 func TestOpenDBEngine(t *testing.T) {

@@ -3,8 +3,8 @@ package sqlite
 import (
 	_ "github.com/mattn/go-sqlite3"
 
-	"sqldb/clause"
-	"sqldb/dialects"
+	"github.com/binwen/sqldb/clause"
+	"github.com/binwen/sqldb/dialects"
 )
 
 type Dialector struct {

@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"sqldb"
-	"sqldb/config"
-	_ "sqldb/dialects/mysql"
-	_ "sqldb/dialects/postgres"
-	_ "sqldb/dialects/sqlite"
+	"github.com/binwen/sqldb"
+	"github.com/binwen/sqldb/config"
+	_ "github.com/binwen/sqldb/dialects/mysql"
+	_ "github.com/binwen/sqldb/dialects/postgres"
+	_ "github.com/binwen/sqldb/dialects/sqlite"
 )
 
 var (
@@ -21,18 +21,13 @@ var (
 func openDB() (*sqldb.EngineGroup, error) {
 	driver := os.Getenv("Driver")
 	if driver == "" {
-		driver = "mysql"
-		//driver = "sqlite3"
-		//driver = "postgres"
+		driver = "sqlite3"
 	}
 	masterDns := os.Getenv("Dns")
 	if masterDns == "" {
-		masterDns = "root:@/sqldb?charset=utf8&parseTime=True"
-		//masterDns = "postgres://postgres:xtx123@10.0.3.3:5432/sqldb?sslmode=disable"
-		//masterDns = "host=10.0.3.3 port=5432 user=postgres dbname=sqldb sslmode=disable password=xtx123"
-		//masterDns = "./sqldb.db?cache=shared&mode=rwc"
+		masterDns = "./sqldb.db?cache=shared&mode=rwc"
 	}
-	showSQL := true // os.Getenv("ShowSQL") == "true"
+	showSQL := os.Getenv("ShowSQL") == "true"
 	maxConns, _ := strconv.Atoi(os.Getenv("MaxConns"))
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))

@@ -10,9 +10,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"sqldb/config"
-	"sqldb/dialects"
-	"sqldb/logger"
+	"github.com/binwen/sqldb/config"
+	"github.com/binwen/sqldb/dialects"
+	"github.com/binwen/sqldb/logger"
 )
 
 const DefaultDBAlias = "default"

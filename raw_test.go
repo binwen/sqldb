@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"sqldb"
-	"sqldb/tests"
+	"github.com/binwen/sqldb"
+	"github.com/binwen/sqldb/tests"
 )
 
 func TestFetchScanMap(t *testing.T) {

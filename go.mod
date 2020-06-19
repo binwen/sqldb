@@ -1,4 +1,4 @@
-module sqldb
+module github.com/binwen/sqldb
 
 go 1.13
 

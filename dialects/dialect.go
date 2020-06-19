@@ -3,7 +3,7 @@ package dialects
 import (
 	"github.com/jmoiron/sqlx"
 
-	"sqldb/clause"
+	"github.com/binwen/sqldb/clause"
 )
 
 var dialectMapping = map[string]Dialector{}

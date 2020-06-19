@@ -7,8 +7,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"sqldb/config"
-	"sqldb/logger"
+	"github.com/binwen/sqldb/config"
+	"github.com/binwen/sqldb/logger"
 )
 
 type SqlDB struct {

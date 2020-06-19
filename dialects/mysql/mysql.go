@@ -3,8 +3,8 @@ package mysql
 import (
 	_ "github.com/go-sql-driver/mysql"
 
-	"sqldb/clause"
-	"sqldb/dialects"
+	"github.com/binwen/sqldb/clause"
+	"github.com/binwen/sqldb/dialects"
 )
 
 type Dialector struct {

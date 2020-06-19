@@ -9,7 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"sqldb/clause"
+	"github.com/binwen/sqldb/clause"
 )
 
 var mapper = NewReflectMapperFunc("db", strings.ToLower)

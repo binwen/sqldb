@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"sqldb"
-	"sqldb/clause"
-	"sqldb/dialects"
+	"github.com/binwen/sqldb"
+	"github.com/binwen/sqldb/clause"
+	"github.com/binwen/sqldb/dialects"
 )
 
 type DummyDialector struct {

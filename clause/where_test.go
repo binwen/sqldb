@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"sqldb/clause"
+	"github.com/binwen/sqldb/clause"
 )
 
 func TestWhere(t *testing.T) {

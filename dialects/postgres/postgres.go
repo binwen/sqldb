@@ -6,8 +6,8 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"sqldb/clause"
-	"sqldb/dialects"
+	"github.com/binwen/sqldb/clause"
+	"github.com/binwen/sqldb/dialects"
 )
 
 type Dialector struct {
