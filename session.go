@@ -392,19 +392,23 @@ type ExecResult struct {
 func (session *Session) insert(isBulk bool, dataRefValue reflect.Value, data interface{}) *ExecResult {
 	session.statement.AddClauseIfNotExists(clause.Insert{Table: clause.Table{Name: session.statement.Tables[0].Name}})
 	session.statement.AddClause(convertCreateValues(dataRefValue, data))
-	session.statement.Build("INSERT", "VALUES", "ON_CONFLICT")
 	var hasReturning bool
 	if session.statement.Dialector.WithReturning() {
-		session.statement.Dialector.SetQueryer(session.db)
-		pkColumnNames := session.statement.Dialector.PKColumnNames(session.statement.Tables[0].Name)
-		if pkColumnNames != nil && len(pkColumnNames) == 1 {
-			session.statement.WriteString(" RETURNING ")
-			session.statement.WriteQuoted(pkColumnNames[0])
-			hasReturning = true
+		if s, ok := session.statement.Clauses["RETURNING"].Expression.(clause.Select); !ok || len(s.Columns) == 0 {
+			session.statement.Dialector.SetQueryer(session.db)
+			pkColumnNames := session.statement.Dialector.PKColumnNames(session.statement.Tables[0].Name)
+			if pkColumnNames != nil && len(pkColumnNames) == 1 {
+				session.statement.AddClause(clause.Returning{Columns: []clause.Column{{Name: pkColumnNames[0]}}})
+				hasReturning = true
+			} else {
+				hasReturning = false
+			}
 		} else {
-			hasReturning = false
+			hasReturning = true
 		}
 	}
+
+	session.statement.Build("INSERT", "VALUES", "ON_CONFLICT", "RETURNING")
 
 	if hasReturning {
 		rows, err := session.db.Query(session.statement.SQL.String(), session.statement.SQLVars...)
