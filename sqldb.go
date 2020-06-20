@@ -7,9 +7,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/binwen/sqldb/clause"
 	"github.com/binwen/sqldb/config"
 	"github.com/binwen/sqldb/logger"
 )
+
+var clauseBuilderMapping = make(map[string]clause.ClauseBuilder, 0)
 
 type SqlDB struct {
 	engine   *ConnectionEngine
@@ -175,4 +178,8 @@ func NewSqlDB(engine *ConnectionEngine, logging bool) *SqlDB {
 
 func OpenDBEngine(conf config.DBConfig, showSQL bool) (*EngineGroup, error) {
 	return NewDBEngineGroup(conf, showSQL)
+}
+
+func SetClauseBuilder(name string, builder clause.ClauseBuilder) {
+	clauseBuilderMapping[name] = builder
 }

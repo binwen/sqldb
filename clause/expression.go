@@ -79,20 +79,6 @@ func (eq EQ) Build(builder Builder) {
 	} else if isSlice(eq.Value) {
 		builder.WriteString(" IN ")
 		builder.AddSQLVar(builder, eq.Value)
-		//switch rv := reflect.Indirect(reflect.ValueOf(eq.Value)); rv.Kind() {
-		//case reflect.Slice, reflect.Array:
-		//	builder.WriteString(" IN (")
-		//	for i := 0; i < rv.Len(); i++ {
-		//		if i > 0 {
-		//			builder.WriteByte(',')
-		//		}
-		//		builder.AddSQLVar(builder, rv.Index(i).Interface())
-		//	}
-		//	builder.WriteString(") ")
-		//default:
-		//	builder.WriteString(" = ")
-		//	builder.AddSQLVar(builder, eq.Value)
-		//}
 	} else {
 		builder.WriteString(" = ")
 		builder.AddSQLVar(builder, eq.Value)
@@ -113,20 +99,6 @@ func (neq NEQ) Build(builder Builder) {
 	} else if isSlice(neq.Value) {
 		builder.WriteString(" NOT IN ")
 		builder.AddSQLVar(builder, neq.Value)
-		//switch rv := reflect.Indirect(reflect.ValueOf(neq.Value)); rv.Kind() {
-		//case reflect.Slice, reflect.Array:
-		//	builder.WriteString(" NOT IN (")
-		//	for i := 0; i < rv.Len(); i++ {
-		//		if i > 0 {
-		//			builder.WriteByte(',')
-		//		}
-		//		builder.AddSQLVar(builder, rv.Index(i).Interface())
-		//	}
-		//	builder.WriteString(") ")
-		//default:
-		//	builder.WriteString(" <> ")
-		//	builder.AddSQLVar(builder, neq.Value)
-		//}
 	} else {
 		builder.WriteString(" <> ")
 		builder.AddSQLVar(builder, neq.Value)
@@ -201,4 +173,40 @@ func (like Like) NegationBuild(builder Builder) {
 	builder.WriteQuoted(like.Column)
 	builder.WriteString(" NOT LIKE ")
 	builder.AddSQLVar(builder, like.Value)
+}
+
+type IN struct {
+	Column interface{}
+	Values []interface{}
+}
+
+func (in IN) Build(builder Builder) {
+	builder.WriteQuoted(in.Column)
+
+	switch len(in.Values) {
+	case 0:
+		builder.WriteString(" IN (NULL)")
+	case 1:
+		builder.WriteString(" = ")
+		builder.AddSQLVar(builder, in.Values...)
+	default:
+		builder.WriteString(" IN (")
+		builder.AddSQLVar(builder, in.Values...)
+		builder.WriteByte(')')
+	}
+}
+
+func (in IN) NegationBuild(builder Builder) {
+	switch len(in.Values) {
+	case 0:
+	case 1:
+		builder.WriteQuoted(in.Column)
+		builder.WriteString(" <> ")
+		builder.AddSQLVar(builder, in.Values...)
+	default:
+		builder.WriteQuoted(in.Column)
+		builder.WriteString(" NOT IN (")
+		builder.AddSQLVar(builder, in.Values...)
+		builder.WriteByte(')')
+	}
 }

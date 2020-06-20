@@ -1,5 +1,7 @@
 package clause
 
+import "sort"
+
 type Update struct {
 	Modifier string
 	Table    Table
@@ -64,4 +66,19 @@ func (set Set) MergeClause(clause *Clause) {
 	}
 
 	clause.Expression = set
+}
+
+func Assignments(values map[string]interface{}) Set {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	assignments := make([]Assignment, len(keys))
+	for idx, key := range keys {
+		assignments[idx] = Assignment{Column: Column{Name: key}, Value: values[key]}
+	}
+
+	return Set{Assignments: assignments}
 }

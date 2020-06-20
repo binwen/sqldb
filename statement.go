@@ -22,14 +22,23 @@ type Statement struct {
 	Hint      string // 用于指定数据库中间件的命令，比如 /*+TDDL:slave()*/
 }
 
+type StatementModifier interface {
+	ModifyStatement(*Statement)
+}
+
 // 添加子句
 func (stmt *Statement) AddClause(v clause.IClause) {
-	c, ok := stmt.Clauses[v.Name()]
+	if optimizer, ok := v.(StatementModifier); ok {
+		optimizer.ModifyStatement(stmt)
+		return
+	}
+	name := v.Name()
+	c, ok := stmt.Clauses[name]
 	if !ok {
-		c.Name = v.Name()
+		c.Name = name
 	}
 	v.MergeClause(&c)
-	stmt.Clauses[v.Name()] = c
+	stmt.Clauses[name] = c
 }
 
 // 如果子句不存在则添加
@@ -94,11 +103,11 @@ func (stmt *Statement) Build(clauses ...string) {
 			}
 
 			firstClauseWritten = true
-			// if b, ok := stmt.DB.ClauseBuilders[name]; ok {
-			// 	b.Build(c, stmt)
-			// } else {
-			c.Build(stmt)
-			// }
+			if builder, ok := clauseBuilderMapping[name]; ok {
+				builder(c, stmt)
+			} else {
+				c.Build(stmt)
+			}
 		}
 	}
 }
@@ -166,7 +175,6 @@ func (stmt Statement) QuoteTo(writer clause.Writer, field interface{}) {
 	}
 }
 
-// Quote returns quoted value
 func (stmt Statement) Quote(field interface{}) string {
 	var builder strings.Builder
 	stmt.QuoteTo(&builder, field)

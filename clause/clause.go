@@ -17,9 +17,7 @@ type Builder interface {
 	AddSQLVar(Writer, ...interface{})
 }
 
-type ClauseBuilder interface {
-	Build(Clause, Builder)
-}
+type ClauseBuilder func(Clause, Builder)
 
 type Clause struct {
 	Name                 string
@@ -33,7 +31,7 @@ type Clause struct {
 
 func (c Clause) Build(builder Builder) {
 	if c.Builder != nil {
-		c.Builder.Build(c, builder)
+		c.Builder(c, builder)
 	} else {
 		builders := c.BeforeExpressions
 		if c.Name != "" {

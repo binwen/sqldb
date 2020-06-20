@@ -65,6 +65,30 @@ func (session *Session) AddError(err error) {
 	return
 }
 
+func (session *Session) AddClause(conds ...clause.Expression) *Session {
+	var whereConds []interface{}
+	for _, cond := range conds {
+		if c, ok := cond.(clause.IClause); ok {
+			session.statement.AddClause(c)
+		} else if optimizer, ok := cond.(StatementModifier); ok {
+			optimizer.ModifyStatement(session.statement)
+		} else {
+			whereConds = append(whereConds, cond)
+		}
+	}
+
+	if len(whereConds) > 0 {
+		conditions, err := session.statement.BuildCondition(whereConds[0], whereConds[1:]...)
+		if err != nil {
+			session.AddError(err)
+		} else if len(conditions) > 0 {
+			session.statement.AddClause(clause.Where{Exprs: conditions})
+		}
+	}
+
+	return session
+}
+
 func (session *Session) Select(columns ...string) *Session {
 	if columns == nil {
 		session.statement.AddClause(clause.Select{})
@@ -499,34 +523,22 @@ func (session *Session) BulkCreate(data interface{}) (lastInsertIdList []int64, 
 // 修改单一字段，返回受影响的行数
 func (session *Session) Update(column string, value interface{}) (affected int64, err error) {
 	defer session.Clear()
-	session.statement.AddClauseIfNotExists(clause.Update{Table: session.statement.Tables[0]})
-	session.statement.AddClause(clause.Set{Assignments: []clause.Assignment{{clause.Column{Name: column}, value}}})
-	session.statement.Build("UPDATE", "SET", "WHERE")
-	result, err := session.db.Exec(session.statement.SQL.String(), session.statement.SQLVars...)
-	if err != nil {
-		return
-	}
-	return result.RowsAffected()
+	return session.BulkUpdate(map[string]interface{}{column: value})
 }
 
 // 批量修改多个字段，返回受影响的行数
 func (session *Session) BulkUpdate(data map[string]interface{}) (affected int64, err error) {
 	defer session.Clear()
-	var sets = make([]clause.Assignment, 0, len(data))
-	var keys []string
-	for k, _ := range data {
-		keys = append(keys, k)
+	if session.statement.SQL.String() == "" {
+		if _, ok := session.statement.Clauses["WHERE"]; !ok {
+			return 0, ErrMissingWhereClause
+		}
+		session.statement.SQL.Grow(180)
+		session.statement.AddClauseIfNotExists(clause.Update{Table: session.statement.Tables[0]})
+		session.statement.AddClause(clause.Assignments(data))
+		session.statement.Build("UPDATE", "SET", "WHERE")
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		sets = append(sets, clause.Assignment{
-			Column: clause.Column{Name: k},
-			Value:  data[k],
-		})
-	}
-	session.statement.AddClauseIfNotExists(clause.Update{Table: session.statement.Tables[0]})
-	session.statement.AddClause(clause.Set{Assignments: sets})
-	session.statement.Build("UPDATE", "SET", "WHERE")
+
 	result, err := session.db.Exec(session.statement.SQL.String(), session.statement.SQLVars...)
 	if err != nil {
 		return
@@ -541,6 +553,7 @@ func (session *Session) Delete() (affected int64, err error) {
 		if _, ok := session.statement.Clauses["WHERE"]; !ok {
 			return 0, ErrMissingWhereClause
 		}
+		session.statement.SQL.Grow(100)
 		session.statement.AddClauseIfNotExists(clause.Delete{})
 		session.statement.AddClauseIfNotExists(clause.From{Tables: session.statement.Tables})
 		session.statement.Build("DELETE", "FROM", "WHERE")
