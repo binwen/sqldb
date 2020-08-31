@@ -272,6 +272,10 @@ func OpenDBEngine(conf config.DBConfig, showSQL bool) (*EngineGroup, error) {
 	return NewDBEngineGroup(conf, showSQL)
 }
 
+func OpenSingleDBEngine(conf *config.Config, showSQL bool) (*EngineGroup, error) {
+	return NewDBEngineGroup(config.DBConfig{DefaultDBAlias: conf}, showSQL)
+}
+
 func SetClauseBuilder(name string, builder clause.ClauseBuilder) {
 	clauseBuilderMapping[name] = builder
 }

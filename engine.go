@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -185,8 +186,16 @@ func (eg *EngineGroup) Table(table string) *Session {
 	return eg.defaultSqlDB.Table(table)
 }
 
+func (eg *EngineGroup) TableContext(ctx context.Context, table string) *Session {
+	return eg.defaultSqlDB.TableContext(ctx, table)
+}
+
 func (eg *EngineGroup) Raw(query string, args ...interface{}) *RawSession {
 	return eg.defaultSqlDB.Raw(query, args...)
+}
+
+func (eg *EngineGroup) RawContext(ctx context.Context, query string, args ...interface{}) *RawSession {
+	return eg.defaultSqlDB.RawContext(ctx, query, args...)
 }
 
 func (eg *EngineGroup) Rebind(query string) string {
@@ -197,20 +206,40 @@ func (eg *EngineGroup) Exec(query string, args ...interface{}) (result sql.Resul
 	return eg.defaultSqlDB.Exec(query, args...)
 }
 
+func (eg *EngineGroup) ExecContext(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
+	return eg.defaultSqlDB.ExecContext(ctx, query, args...)
+}
+
 func (eg *EngineGroup) Query(query string, args ...interface{}) (rows *sqlx.Rows, err error) {
 	return eg.defaultSqlDB.Query(query, args...)
+}
+
+func (eg *EngineGroup) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sqlx.Rows, err error) {
+	return eg.defaultSqlDB.QueryContext(ctx, query, args...)
 }
 
 func (eg *EngineGroup) QueryRow(query string, args ...interface{}) (row *sqlx.Row) {
 	return eg.defaultSqlDB.QueryRow(query, args...)
 }
 
+func (eg *EngineGroup) QueryRowContext(ctx context.Context, query string, args ...interface{}) (row *sqlx.Row) {
+	return eg.defaultSqlDB.QueryRowContext(ctx, query, args...)
+}
+
 func (eg *EngineGroup) Tx(fn func(db *SqlDB) error) (err error) {
 	return eg.defaultSqlDB.Tx(fn)
 }
 
+func (eg *EngineGroup) TxContext(ctx context.Context, fn func(db *SqlDB) error) (err error) {
+	return eg.defaultSqlDB.TxContext(ctx, fn)
+}
+
 func (eg *EngineGroup) Begin() (*SqlDB, error) {
 	return eg.defaultSqlDB.Begin()
+}
+
+func (eg *EngineGroup) BeginContext(ctx context.Context) (*SqlDB, error) {
+	return eg.defaultSqlDB.BeginContext(ctx)
 }
 
 func (eg *EngineGroup) Commit() error {
