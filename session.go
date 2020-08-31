@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -18,6 +19,7 @@ type Session struct {
 	Error     error
 	db        *SqlDB
 	statement *Statement
+	ctx       context.Context
 }
 
 type DestWrapper struct {
@@ -29,7 +31,7 @@ func Expr(expr string, args ...interface{}) *clause.Expr {
 	return &clause.Expr{SQL: expr, Vars: args}
 }
 
-func NewSession(db *SqlDB, table string) *Session {
+func NewSession(ctx context.Context, db *SqlDB, table string) *Session {
 	var tables []clause.Table
 
 	for _, t := range strings.Split(table, ",") {
@@ -51,6 +53,7 @@ func NewSession(db *SqlDB, table string) *Session {
 			Clauses:   map[string]clause.Clause{},
 			Tables:    tables,
 		},
+		ctx: ctx,
 	}
 
 	return session
@@ -236,7 +239,7 @@ func (session *Session) execQuery(dest DestWrapper) (err error) {
 		session.buildQuerySQL()
 	}
 
-	rows, err := session.db.Query(session.statement.SQL.String(), session.statement.SQLVars...)
+	rows, err := session.db.QueryContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 	if err != nil {
 		return err
 	}
@@ -281,7 +284,7 @@ func (session *Session) Count() (count int64, err error) {
 		session.buildQuerySQL()
 	}
 
-	r := session.db.QueryRow(session.statement.SQL.String(), session.statement.SQLVars...)
+	r := session.db.QueryRowContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 	err = r.Scan(&count)
 	return count, err
 }
@@ -435,7 +438,7 @@ func (session *Session) insert(isBulk bool, dataRefValue reflect.Value, data int
 	session.statement.Build("INSERT", "VALUES", "ON_CONFLICT", "RETURNING")
 
 	if hasReturning {
-		rows, err := session.db.Query(session.statement.SQL.String(), session.statement.SQLVars...)
+		rows, err := session.db.QueryContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 		if err != nil {
 			return &ExecResult{err: err}
 		}
@@ -450,7 +453,7 @@ func (session *Session) insert(isBulk bool, dataRefValue reflect.Value, data int
 		return &ExecResult{isId: true, idList: idList}
 	}
 
-	result, err := session.db.Exec(session.statement.SQL.String(), session.statement.SQLVars...)
+	result, err := session.db.ExecContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 	if err != nil {
 		return &ExecResult{err: err}
 	}
@@ -539,7 +542,7 @@ func (session *Session) BulkUpdate(data map[string]interface{}) (affected int64,
 		session.statement.Build("UPDATE", "SET", "WHERE")
 	}
 
-	result, err := session.db.Exec(session.statement.SQL.String(), session.statement.SQLVars...)
+	result, err := session.db.ExecContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 	if err != nil {
 		return
 	}
@@ -558,7 +561,7 @@ func (session *Session) Delete() (affected int64, err error) {
 		session.statement.AddClauseIfNotExists(clause.From{Tables: session.statement.Tables})
 		session.statement.Build("DELETE", "FROM", "WHERE")
 	}
-	result, err := session.db.Exec(session.statement.SQL.String(), session.statement.SQLVars...)
+	result, err := session.db.ExecContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 	if err != nil {
 		return
 	}
@@ -575,7 +578,7 @@ func (session *Session) Query() (*sqlx.Rows, error) {
 		session.buildQuerySQL()
 	}
 
-	return session.db.Query(session.statement.SQL.String(), session.statement.SQLVars...)
+	return session.db.QueryContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 }
 
 func (session *Session) QueryRow() *sqlx.Row {
@@ -584,7 +587,7 @@ func (session *Session) QueryRow() *sqlx.Row {
 		session.buildQuerySQL()
 	}
 
-	return session.db.QueryRow(session.statement.SQL.String(), session.statement.SQLVars...)
+	return session.db.QueryRowContext(session.ctx, session.statement.SQL.String(), session.statement.SQLVars...)
 }
 
 func (session *Session) Hint(query string) *Session {

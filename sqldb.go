@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 	"time"
@@ -23,19 +24,30 @@ type SqlDB struct {
 
 type ISqlx interface {
 	Queryx(query string, args ...interface{}) (*sqlx.Rows, error)
+	QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error)
 	QueryRowx(query string, args ...interface{}) *sqlx.Row
+	QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row
 	Exec(query string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 
 	Rebind(query string) string
 	DriverName() string
 }
 
 func (db *SqlDB) Table(table string) *Session {
-	return NewSession(db, table)
+	return NewSession(context.Background(), db, table)
+}
+
+func (db *SqlDB) TableContext(ctx context.Context, table string) *Session {
+	return NewSession(ctx, db, table)
 }
 
 func (db *SqlDB) Raw(query string, args ...interface{}) *RawSession {
-	return &RawSession{db: db, query: query, vars: args}
+	return &RawSession{ctx: context.Background(), db: db, query: query, vars: args}
+}
+
+func (db *SqlDB) RawContext(ctx context.Context, query string, args ...interface{}) *RawSession {
+	return &RawSession{ctx: ctx, db: db, query: query, vars: args}
 }
 
 func (db *SqlDB) Rebind(query string) string {
@@ -72,6 +84,24 @@ func (db *SqlDB) Exec(query string, args ...interface{}) (result sql.Result, err
 	return db.getDB().Exec(query, newArgs...)
 }
 
+func (db *SqlDB) ExecContext(ctx context.Context, query string, args ...interface{}) (result sql.Result, err error) {
+	defer func(start time.Time) {
+		logger.ExplainSQL(&logger.QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, db.logging)
+
+	}(time.Now())
+
+	db.isMaster = true
+
+	query, newArgs := db.convert(query, args)
+	return db.getDB().ExecContext(ctx, query, newArgs...)
+}
+
 func (db *SqlDB) Query(query string, args ...interface{}) (rows *sqlx.Rows, err error) {
 	defer func(start time.Time) {
 		logger.ExplainSQL(&logger.QueryStatus{
@@ -85,6 +115,21 @@ func (db *SqlDB) Query(query string, args ...interface{}) (rows *sqlx.Rows, err 
 
 	query, newArgs := db.convert(query, args)
 	return db.getDB().Queryx(query, newArgs...)
+}
+
+func (db *SqlDB) QueryContext(ctx context.Context, query string, args ...interface{}) (rows *sqlx.Rows, err error) {
+	defer func(start time.Time) {
+		logger.ExplainSQL(&logger.QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   err,
+			Start: start,
+			End:   time.Now(),
+		}, db.logging)
+	}(time.Now())
+
+	query, newArgs := db.convert(query, args)
+	return db.getDB().QueryxContext(ctx, query, newArgs...)
 }
 
 func (db *SqlDB) QueryRow(query string, args ...interface{}) (row *sqlx.Row) {
@@ -101,6 +146,22 @@ func (db *SqlDB) QueryRow(query string, args ...interface{}) (row *sqlx.Row) {
 	query, newArgs := db.convert(query, args)
 
 	return db.getDB().QueryRowx(query, newArgs...)
+}
+
+func (db *SqlDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) (row *sqlx.Row) {
+	defer func(start time.Time) {
+		logger.ExplainSQL(&logger.QueryStatus{
+			Query: query,
+			Args:  args,
+			Err:   row.Err(),
+			Start: start,
+			End:   time.Now(),
+		}, db.logging)
+	}(time.Now())
+
+	query, newArgs := db.convert(query, args)
+
+	return db.getDB().QueryRowxContext(ctx, query, newArgs...)
 }
 
 func (db *SqlDB) convert(query string, args []interface{}) (string, []interface{}) {
@@ -149,8 +210,39 @@ func (db *SqlDB) Tx(fn func(db *SqlDB) error) (err error) {
 	return
 }
 
+func (db *SqlDB) TxContext(ctx context.Context, fn func(db *SqlDB) error) (err error) {
+	tx, err := db.engine.Master().BeginTxx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				logger.Errorf("sqldb rollback error:%s", err)
+			}
+		}
+	}()
+
+	err = fn(&SqlDB{engine: db.engine, tx: tx, logging: db.logging})
+	if err == nil {
+		err = tx.Commit()
+	}
+
+	return
+}
+
 func (db *SqlDB) Begin() (*SqlDB, error) {
 	tx, err := db.engine.Master().Beginx()
+	if err != nil {
+		return nil, err
+	}
+	return &SqlDB{engine: db.engine, tx: tx, logging: db.logging}, nil
+}
+
+func (db *SqlDB) BeginContext(ctx context.Context) (*SqlDB, error) {
+	tx, err := db.engine.Master().BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
