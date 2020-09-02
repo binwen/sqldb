@@ -9,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/binwen/sqldb/clause"
-	"github.com/binwen/sqldb/config"
 	"github.com/binwen/sqldb/logger"
 )
 
@@ -268,12 +267,12 @@ func NewSqlDB(engine *ConnectionEngine, logging bool) *SqlDB {
 	return &SqlDB{engine: engine, logging: logging}
 }
 
-func OpenDBEngine(conf config.DBConfig, showSQL bool) (*EngineGroup, error) {
+func OpenDBEngine(conf DBConfig, showSQL bool) (*EngineGroup, error) {
 	return NewDBEngineGroup(conf, showSQL)
 }
 
-func OpenSingleDBEngine(conf *config.Config, showSQL bool) (*EngineGroup, error) {
-	return NewDBEngineGroup(config.DBConfig{DefaultDBAlias: conf}, showSQL)
+func OpenSingleDBEngine(conf *Config, showSQL bool) (*EngineGroup, error) {
+	return NewDBEngineGroup(DBConfig{DefaultDBAlias: conf}, showSQL)
 }
 
 func SetClauseBuilder(name string, builder clause.ClauseBuilder) {

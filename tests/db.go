@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/binwen/sqldb"
-	"github.com/binwen/sqldb/config"
 	_ "github.com/binwen/sqldb/dialects/mysql"
 	_ "github.com/binwen/sqldb/dialects/postgres"
 	_ "github.com/binwen/sqldb/dialects/sqlite"
@@ -32,12 +31,12 @@ func openDB() (*sqldb.EngineGroup, error) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -46,17 +45,17 @@ func openDB() (*sqldb.EngineGroup, error) {
 		})
 	}
 	return sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,

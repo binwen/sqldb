@@ -1,4 +1,4 @@
-package config
+package sqldb
 
 type Config struct {
 	Driver string
@@ -18,7 +18,7 @@ type ClusterConfig struct {
 	Driver string
 	Master *Config
 	Slaves []*Config
-	Policy PolicyOptions
+	Policy *PolicyOptions
 }
 
 type DBConfig map[string]interface{}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/binwen/sqldb/config"
 	"github.com/binwen/sqldb/dialects"
 	"github.com/binwen/sqldb/logger"
 )
@@ -48,7 +47,7 @@ func (engine *ConnectionEngine) Slaves() []*Connection {
 	return engine.slaves
 }
 
-func openConnector(dbConf *config.Config) (*Connection, error) {
+func openConnector(dbConf *Config) (*Connection, error) {
 	db, err := sqlx.Connect(dbConf.Driver, dbConf.DNS)
 	if err != nil {
 		return nil, err
@@ -88,11 +87,11 @@ func (eg *EngineGroup) Use(dbAlias ...string) *SqlDB {
 	return NewSqlDB(engine, eg.showSQL)
 }
 
-func (eg *EngineGroup) resolveSingle(dbAlias string, conf *config.Config) error {
-	return eg.resolveCluster(dbAlias, &config.ClusterConfig{Driver: conf.Driver, Master: conf})
+func (eg *EngineGroup) resolveSingle(dbAlias string, conf *Config) error {
+	return eg.resolveCluster(dbAlias, &ClusterConfig{Driver: conf.Driver, Master: conf})
 }
 
-func (eg *EngineGroup) resolveCluster(dbAlias string, conf *config.ClusterConfig) error {
+func (eg *EngineGroup) resolveCluster(dbAlias string, conf *ClusterConfig) error {
 	if conf.Driver == "" {
 		return errors.New(fmt.Sprintf("This alias database `%s` conf driver is null", dbAlias))
 	}
@@ -131,8 +130,7 @@ func (eg *EngineGroup) resolveCluster(dbAlias string, conf *config.ClusterConfig
 		engine.slaves = append(engine.slaves, db)
 		eg.engineGroup[dbAlias] = engine
 	}
-
-	if conf.Policy.Mode == "" {
+	if conf.Policy == nil || conf.Policy.Mode == "" {
 		eg.engineGroup[dbAlias].policy = RandomPolicy()
 	} else {
 		handlerFunc, ok := GetPolicyHandler(conf.Policy.Mode)
@@ -254,7 +252,7 @@ func (eg *EngineGroup) DriverName() string {
 	return eg.defaultSqlDB.DriverName()
 }
 
-func NewDBEngineGroup(conf config.DBConfig, showSQL bool) (engineGroup *EngineGroup, err error) {
+func NewDBEngineGroup(conf DBConfig, showSQL bool) (engineGroup *EngineGroup, err error) {
 	if len(conf) == 0 {
 		return nil, errors.New("database connection configuration cannot be empty")
 	}
@@ -268,18 +266,18 @@ func NewDBEngineGroup(conf config.DBConfig, showSQL bool) (engineGroup *EngineGr
 	}
 	for dbAlias, dbConfig := range conf {
 		switch dbConfig.(type) {
-		case *config.Config:
-			err = engineGroup.resolveSingle(dbAlias, dbConfig.(*config.Config))
-		case config.Config:
-			conf := dbConfig.(config.Config)
+		case *Config:
+			err = engineGroup.resolveSingle(dbAlias, dbConfig.(*Config))
+		case Config:
+			conf := dbConfig.(Config)
 			err = engineGroup.resolveSingle(dbAlias, &conf)
-		case *config.ClusterConfig:
-			err = engineGroup.resolveCluster(dbAlias, dbConfig.(*config.ClusterConfig))
-		case config.ClusterConfig:
-			conf := dbConfig.(config.ClusterConfig)
+		case *ClusterConfig:
+			err = engineGroup.resolveCluster(dbAlias, dbConfig.(*ClusterConfig))
+		case ClusterConfig:
+			conf := dbConfig.(ClusterConfig)
 			err = engineGroup.resolveCluster(dbAlias, &conf)
 		default:
-			panic(fmt.Sprintf("OpenDBEngine() need config.Config or config.ClusterConfig type param, but gov %T",
+			panic(fmt.Sprintf("OpenDBEngine() need Config or ClusterConfig type param, but gov %T",
 				dbConfig))
 		}
 		if err != nil {

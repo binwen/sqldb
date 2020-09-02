@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/binwen/sqldb"
-	"github.com/binwen/sqldb/config"
 )
 
 func TestNewDBEngine(t *testing.T) {
@@ -20,12 +19,12 @@ func TestNewDBEngine(t *testing.T) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -34,24 +33,24 @@ func TestNewDBEngine(t *testing.T) {
 		})
 	}
 	engine, err := sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,
 					MaxLifetime:  maxLifetime,
 				},
 				Slaves: slaves,
-				Policy: config.PolicyOptions{
+				Policy: &sqldb.PolicyOptions{
 					Mode:   "weightroundrobin",
 					Params: sqldb.PolicyParams{Weights: []int{2, 3}},
 				},
@@ -81,12 +80,12 @@ func TestSetPolicy(t *testing.T) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -96,17 +95,17 @@ func TestSetPolicy(t *testing.T) {
 	}
 
 	engine, err := sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,
@@ -159,12 +158,12 @@ func TestCustomPolicy(t *testing.T) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -174,17 +173,17 @@ func TestCustomPolicy(t *testing.T) {
 	}
 
 	engine, err := sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,
@@ -239,12 +238,12 @@ func TestRegisterPolicyHandler(t *testing.T) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -254,24 +253,24 @@ func TestRegisterPolicyHandler(t *testing.T) {
 	}
 
 	engine, err := sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,
 					MaxLifetime:  maxLifetime,
 				},
 				Slaves: slaves,
-				Policy: config.PolicyOptions{
+				Policy: &sqldb.PolicyOptions{
 					Mode:   "custom",
 					Params: []int{2, 3},
 				},

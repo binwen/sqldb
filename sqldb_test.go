@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/binwen/sqldb"
-	"github.com/binwen/sqldb/config"
 	"github.com/binwen/sqldb/tests"
 )
 
@@ -21,12 +20,12 @@ func TestOpenDBEngine(t *testing.T) {
 	maxIdleConns, _ := strconv.Atoi(os.Getenv("MaxIdleConns"))
 	maxLifetime, _ := strconv.Atoi(os.Getenv("MaxLifetime"))
 
-	var slaves []*config.Config
+	var slaves []*sqldb.Config
 	for _, dns := range strings.Split(os.Getenv("Slaves"), ";") {
 		if dns == "" {
 			continue
 		}
-		slaves = append(slaves, &config.Config{
+		slaves = append(slaves, &sqldb.Config{
 			Driver:       driver,
 			DNS:          dns,
 			MaxConns:     maxConns,
@@ -36,17 +35,17 @@ func TestOpenDBEngine(t *testing.T) {
 	}
 
 	engine, err := sqldb.OpenDBEngine(
-		config.DBConfig{
-			"default": &config.Config{
+		sqldb.DBConfig{
+			"default": &sqldb.Config{
 				Driver:       driver,
 				DNS:          masterDns,
 				MaxConns:     maxConns,
 				MaxIdleConns: maxIdleConns,
 				MaxLifetime:  maxLifetime,
 			},
-			"cluster": &config.ClusterConfig{
+			"cluster": &sqldb.ClusterConfig{
 				Driver: driver,
-				Master: &config.Config{
+				Master: &sqldb.Config{
 					DNS:          masterDns,
 					MaxConns:     maxConns,
 					MaxIdleConns: maxIdleConns,
